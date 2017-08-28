@@ -1,0 +1,33 @@
+
+---
+# This playbook installs and configures vault
+
+- name: Install and configure Vault
+  hosts: vault
+  remote_user: ubuntu
+
+  tasks:
+  - name: install dependencies
+    apt: name=unzip state=present update_cache=yes 
+    become: yes
+    become_method: sudo
+
+  - name: Download Vault
+    get_url: url=https://releases.hashicorp.com/vault/0.8.1/vault_0.8.1_linux_amd64.zip dest=/tmp/vault_0.8.1_linux_amd64.zip
+
+  - name: Extract archive
+    unarchive: src=/tmp/vault_0.8.1_linux_amd64.zip dest=~/ remote_src=True
+
+  - name: Add Vault location to PATH
+    lineinfile: path=~/.profile line="PATH=$HOME:$PATH" regexp="PATH=\$HOME:\$PATH"
+
+  - name: Copy Vault configuration file
+    copy: src=config.hcl dest=~/config.hcl
+
+  - name: Give Vault the ability to use the mlock syscall
+    shell: setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
+    become: yes
+    become_method: sudo
+
+  - name: Start Vault server with custom configuration
+    shell: daemon -- vault server -config=config.hcl
