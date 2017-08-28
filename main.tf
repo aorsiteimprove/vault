@@ -63,6 +63,8 @@ resource "aws_instance" "vault" {
   vpc_security_group_ids = ["${aws_security_group.security-group-ec1-d-vault.id}"]
   subnet_id = "subnet-52628139"
   iam_instance_profile = "${aws_iam_instance_profile.vault-profile.name}"
+  
+  key_name = "aor-siteimprove"
 
   tags {
     Name = "vault"
