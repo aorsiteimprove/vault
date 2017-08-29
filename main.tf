@@ -71,3 +71,7 @@ resource "aws_instance" "vault" {
     Owner = "ops"
   }
 }
+
+output "private ip" {
+  value = "${aws_instance.vault.private_ip}"
+}

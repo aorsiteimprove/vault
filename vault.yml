@@ -5,9 +5,23 @@
 - name: Install and configure Vault
   hosts: vault
   remote_user: ubuntu
+  gather_facts: false
 
+  pre_tasks:
+  - name: Install python2 for Ansible
+    raw: bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qqy python-minimal)"
+    register: output
+    changed_when:
+    - output.stdout != ""
+    - output.stdout != "\r\n"
+    become: yes
+    become_method: sudo
+
+  - name: Gathering facts
+    setup:
+    
   tasks:
-  - name: install dependencies
+  - name: Install dependencies
     apt: name=unzip state=present update_cache=yes 
     become: yes
     become_method: sudo
@@ -15,19 +29,43 @@
   - name: Download Vault
     get_url: url=https://releases.hashicorp.com/vault/0.8.1/vault_0.8.1_linux_amd64.zip dest=/tmp/vault_0.8.1_linux_amd64.zip
 
-  - name: Extract archive
-    unarchive: src=/tmp/vault_0.8.1_linux_amd64.zip dest=~/ remote_src=True
-
-  - name: Add Vault location to PATH
-    lineinfile: path=~/.profile line="PATH=$HOME:$PATH" regexp="PATH=\$HOME:\$PATH"
-
-  - name: Copy Vault configuration file
-    copy: src=config.hcl dest=~/config.hcl
-
-  - name: Give Vault the ability to use the mlock syscall
-    shell: setcap cap_ipc_lock=+ep $(readlink -f $(which vault))
+  - name: Create Vault directory
+    file: path=/opt/Vault state=directory owner=ubuntu group=ubuntu mode=0755
     become: yes
     become_method: sudo
 
-  - name: Start Vault server with custom configuration
-    shell: daemon -- vault server -config=config.hcl
+  - name: Extract archive
+    unarchive: src=/tmp/vault_0.8.1_linux_amd64.zip dest=/opt/Vault/ remote_src=True
+
+  - name: Add Vault location to PATH
+    lineinfile: path=~/.profile line="PATH=/opt/Vault:$PATH" regexp="PATH=/opt/Vault:\$PATH"
+
+  - name: Copy Vault configuration file
+    copy: src=vault-config.hcl dest=/opt/Vault/vault-config.hcl
+
+  - name: Give Vault the ability to use the mlock syscall
+    capabilities:
+      path: /opt/Vault/vault
+      capability: cap_ipc_lock=+ep
+      state: present
+    become: yes
+    become_method: sudo
+
+  - name: Copy Vault systemd service file
+    copy: src=vault.service dest=/etc/systemd/system/vault.service
+    become: yes
+    become_method: sudo
+
+  - name: Start Vault server as service
+    systemd: state=started name=vault.service daemon_reload=yes
+    become: yes
+    become_method: sudo
+
+  - name: init vault server
+    shell: /opt/Vault/vault init
+    environment:
+        VAULT_ADDR: 'http://0.0.0.0:8200'
+    register: vault_init
+
+  - name: Vault init keys
+    debug: msg="{{ vault_init.stdout_lines }}"
