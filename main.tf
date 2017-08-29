@@ -6,7 +6,7 @@ provider "aws" {
 resource "aws_security_group" "security-group-ec1-d-vault" {
   name = "security-group-ec1-d-vault"
   description = "security group for vault"
-  vpc_id = "vpc-48267f20"
+  vpc_id = "${var.vpc_id}"
 
   ingress {
     from_port = 0
@@ -61,14 +61,14 @@ resource "aws_instance" "vault" {
   instance_type = "t2.micro"
 
   vpc_security_group_ids = ["${aws_security_group.security-group-ec1-d-vault.id}"]
-  subnet_id = "subnet-52628139"
+  subnet_id = "${var.subnet_id}"
   iam_instance_profile = "${aws_iam_instance_profile.vault-profile.name}"
   
-  key_name = "aor-siteimprove"
+  key_name = "${var.key_name}"
 
   tags {
     Name = "vault"
-    Owner = "ops"
+    Owner = "${var.owner}"
   }
 }
 
