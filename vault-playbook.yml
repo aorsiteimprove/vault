@@ -27,25 +27,25 @@
     become_method: sudo
 
   - name: Download Vault
-    get_url: url=https://releases.hashicorp.com/vault/0.8.1/vault_0.8.1_linux_amd64.zip dest=/tmp/vault_0.8.1_linux_amd64.zip
+    get_url: url=https://releases.hashicorp.com/vault/{{vault_version}}/vault_{{vault_version}}_linux_amd64.zip dest=/tmp/vault.zip
 
   - name: Create Vault directory
-    file: path=/opt/Vault state=directory owner=ubuntu group=ubuntu mode=0755
+    file: path=/opt/vault state=directory owner=ubuntu group=ubuntu mode=0755
     become: yes
     become_method: sudo
 
   - name: Extract archive
-    unarchive: src=/tmp/vault_0.8.1_linux_amd64.zip dest=/opt/Vault/ remote_src=True
+    unarchive: src=/tmp/vault.zip dest=/opt/vault/ remote_src=True
 
   - name: Add Vault location to PATH
-    lineinfile: path=~/.profile line="PATH=/opt/Vault:$PATH" regexp="PATH=/opt/Vault:\$PATH"
+    lineinfile: path=~/.profile line="PATH=/opt/vault:$PATH" regexp="PATH=/opt/vault:\$PATH"
 
   - name: Copy Vault configuration file
-    copy: src=vault-config.hcl dest=/opt/Vault/vault-config.hcl
+    copy: src=vault-config.hcl dest=/opt/vault/vault-config.hcl
 
   - name: Give Vault the ability to use the mlock syscall
     capabilities:
-      path: /opt/Vault/vault
+      path: /opt/vault/vault
       capability: cap_ipc_lock=+ep
       state: present
     become: yes
@@ -57,6 +57,6 @@
     become_method: sudo
 
   - name: Start Vault server as service
-    systemd: state=started name=vault.service daemon_reload=yes
+    systemd: state=started name=vault.service daemon_reload=yes enabled=yes
     become: yes
     become_method: sudo
