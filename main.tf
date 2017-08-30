@@ -3,6 +3,34 @@ provider "aws" {
   //profile = "production"
 }
 
+data "template_file" "vault-inventory" {
+	template = <<EOF
+
+[vault]
+$${vault_ip} ansible_ssh_private_key_file=~/.ssh/aor-siteimprove.pem
+
+[vault:vars]
+vault_version=$${vault_version}
+EOF
+
+	vars {
+    vault_version="0.8.1"
+    vault_ip="${aws_instance.vault.private_ip}"
+	}
+}
+
+resource "null_resource" "vault-init" {
+	triggers {
+		template = "${data.template_file.vault-inventory.rendered}"
+	}
+
+	provisioner "local-exec" {
+		command = <<EOF
+echo "${data.template_file.vault-inventory.rendered}" > vault.inv
+EOF
+	}
+}
+
 resource "aws_security_group" "security-group-ec1-d-vault" {
   name = "security-group-ec1-d-vault"
   description = "security group for vault"
