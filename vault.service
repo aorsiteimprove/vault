@@ -10,7 +10,7 @@ After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/opt/Vault/vault server -config=/opt/Vault/vault-config.hcl
+ExecStart=/opt/vault/vault server -config=/opt/vault/vault-config.hcl
 
 [Install]
 WantedBy=multi-user.target
