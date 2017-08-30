@@ -1,0 +1,1 @@
+curl --request PUT --data @config.json http://$vault_address:8200/v1/sys/init > output.json
