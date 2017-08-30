@@ -60,12 +60,3 @@
     systemd: state=started name=vault.service daemon_reload=yes
     become: yes
     become_method: sudo
-
-  - name: init vault server
-    shell: /opt/Vault/vault init
-    environment:
-        VAULT_ADDR: 'http://0.0.0.0:8200'
-    register: vault_init
-
-  - name: Vault init keys
-    debug: msg="{{ vault_init.stdout_lines }}"
